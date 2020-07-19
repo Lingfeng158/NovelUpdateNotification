@@ -3,6 +3,7 @@
 
 const Joi = require("@hapi/joi");
 const mongoose = require("mongoose");
+const fetch = require("node-fetch");
 
 module.exports = app=>{
 
@@ -86,6 +87,26 @@ module.exports = app=>{
 
     });
 
+    app.put('/v1/novelChapter/:novelID', async (req, res)=>{
+        if(!req.session.user){
+            res.status(401).send({error:"Unauthorized"});
+        }else{
+            try{
+                let schema = Joi.object().keys({
+                    last_read: Joi.number()
+                        .required()
+                });
+                let data = await schema.validateAsync(req.body);
+                let query = {last_read:data.last_read};
+                let novel =await app.models.Novel.findOneAndUpdate({_id:req.params.novelID}, query);
+                res.status(200).send();
+            }catch (e) {
+                res.status(400).send({error:e});
+            }
+        }
+
+    });
+
     app.delete('/v1/novel/:novelID', async (req, res)=>{
 
         if(!req.session.user){
@@ -118,4 +139,37 @@ module.exports = app=>{
 
         }
     });
+
+    app.put('/v1/ext', async (req, res)=>{
+        if(!req.body){
+            res.status(400).send({error:"URL Required"});
+        }else{
+            let url = req.body.novel_initial_url;
+            fetch(url, {
+                method: 'get',
+                headers: {
+                    Accept: "text/html"},
+            }).then(response=>{
+                if(response.ok){
+                    response.text().then(js=>{
+                        //get to general location
+                        let id=js.search("catalogCount");
+                        let frontBracket = js.indexOf('(', id);
+                        let backBracket = js.indexOf(')', id);
+                        //get count of data
+                        let count = js.substring(frontBracket+1, backBracket-1);
+                        // console.log(count);
+                        res.status(200).send({count:count});
+
+                    })
+                }else{
+                    res.status(400).send({error:"Response Rejected"});
+                }
+            }).catch(e=>{
+                console.log(e);
+                res.status(400).send({error:e});
+            })
+        }
+
+    })
 }

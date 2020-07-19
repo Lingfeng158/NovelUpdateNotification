@@ -154,8 +154,8 @@ export const Activity = props=>{
                 <tr>
                     <th>Index</th>
                     <th>Name</th>
-                    <th>urlOriginal</th>
-                    <th>urlRead</th>
+                    <th>Chapters to Read</th>
+                    <th>Link to Website</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
